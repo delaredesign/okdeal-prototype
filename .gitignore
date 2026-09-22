@@ -1,5 +1,6 @@
 node_modules
 dist
+supabase/.temp/
 *.tsbuildinfo
 .DS_Store
 .env
