@@ -1,0 +1,11 @@
+import { FormEvent, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Brand } from '../components/Brand'
+import { supabase } from '../lib/supabase'
+
+export function AuthPage() {
+  const [mode, setMode] = useState<'login'|'signup'>('login'); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [message, setMessage] = useState(''); const [busy, setBusy] = useState(false)
+  const navigate = useNavigate(); const location = useLocation(); const next = (location.state as { from?: string } | null)?.from || '/dashboard'
+  async function submit(event: FormEvent) { event.preventDefault(); setBusy(true); setMessage(''); const result = mode === 'login' ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password }); setBusy(false); if (result.error) return setMessage(result.error.message); if (mode === 'signup' && !result.data.session) return setMessage('Check your email to confirm your account, then sign in.'); navigate(next, { replace: true }) }
+  return <div className="create-page"><header className="create-header"><Brand/><Link to="/">Back home</Link></header><main className="auth-shell"><section className="auth-card"><p className="eyebrow">CREATOR ACCOUNT</p><h1>{mode === 'login' ? 'Welcome back.' : 'Create your account.'}</h1><p>Creator accounts keep your OKDeals together. Recipients still do not need an account.</p>{message && <div className="draft-notice" role="status">{message}</div>}<form onSubmit={submit}><label>Email<input type="email" required autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Password<input type="password" minLength={8} required autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={e=>setPassword(e.target.value)}/></label><button className="button" disabled={busy}>{busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}</button></form><button className="text-button" onClick={()=>{setMode(mode === 'login' ? 'signup' : 'login'); setMessage('')}}>{mode === 'login' ? 'New to OKDeal? Create an account' : 'Already have an account? Sign in'}</button></section></main></div>
+}
