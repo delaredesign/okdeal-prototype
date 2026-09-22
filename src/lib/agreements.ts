@@ -1,31 +1,15 @@
 import type { DealDraft } from '../domain/draft'
 import { supabase } from './supabase'
 
-export type AgreementSummary = {
-  id: string; okdeal_id: string; status: string; intended_recipient_name: string
-  created_at: string; agreement_versions: { title: string; amount_minor: number; currency: string }[]
-}
+export type Version={version_number:number;title:string;description:string;amount_minor:number;currency:string;start_date:string;completion_date:string;payment_terms:string;additional_terms:string|null;created_at:string}
+export type AgreementSummary={id:string;okdeal_id:string;status:string;intended_recipient_name:string;created_at:string;agreement_versions:{title:string;amount_minor:number;currency:string}[]}
+export type AgreementDetail=Omit<AgreementSummary,'agreement_versions'>&{current_version:number;accepted_version:number|null;locked_at:string|null;intended_recipient_email:string;agreement_versions:Version[];agreement_events:{id:number;event_type:string;actor_role:string;metadata:Record<string,unknown>;created_at:string}[];change_requests:{id:string;version_number:number;message:string;requested_at:string}[];agreement_signatures:{signer_role:string;signer_name:string;signer_email:string;signed_at:string;version_number:number}[]}
 
-export async function createAgreement(draft: DealDraft) {
-  const { data, error } = await supabase.rpc('create_agreement', {
-    p_recipient_name: draft.recipientName.trim(), p_recipient_email: draft.recipientEmail.trim().toLowerCase(),
-    p_recipient_phone: draft.phone.trim() || null, p_title: draft.title.trim(), p_description: draft.description.trim(),
-    p_amount_minor: Math.round(Number(draft.amount) * 100), p_currency: 'MYR', p_start_date: draft.startDate,
-    p_completion_date: draft.completionDate, p_payment_terms: draft.paymentTerms.trim(),
-    p_additional_terms: draft.additionalTerms.trim() || null,
-  })
-  if (error) throw error
-  return data as { id: string; okdeal_id: string; share_token: string }
-}
-
-export async function listAgreements() {
-  const { data, error } = await supabase.from('agreements').select('id,okdeal_id,status,intended_recipient_name,created_at,agreement_versions(title,amount_minor,currency)').order('created_at', { ascending: false })
-  if (error) throw error
-  return data as AgreementSummary[]
-}
-
-export async function getSharedAgreement(token: string, email: string) {
-  const { data, error } = await supabase.rpc('get_shared_agreement', { p_share_token: token, p_recipient_email: email.trim().toLowerCase() })
-  if (error) throw error
-  return data as null | Record<string, string | number | null>
-}
+export async function createAgreement(d:DealDraft){const {data,error}=await supabase.rpc('create_agreement',{p_recipient_name:d.recipientName.trim(),p_recipient_email:d.recipientEmail.trim().toLowerCase(),p_recipient_phone:d.phone.trim()||null,p_title:d.title.trim(),p_description:d.description.trim(),p_amount_minor:Math.round(Number(d.amount)*100),p_currency:'MYR',p_start_date:d.startDate,p_completion_date:d.completionDate,p_payment_terms:d.paymentTerms.trim(),p_additional_terms:d.additionalTerms.trim()||null});if(error)throw error;return data as {id:string;okdeal_id:string;share_token:string}}
+export async function listAgreements(){const {data,error}=await supabase.from('agreements').select('id,okdeal_id,status,intended_recipient_name,created_at,agreement_versions(title,amount_minor,currency)').order('created_at',{ascending:false});if(error)throw error;return data as AgreementSummary[]}
+export async function getAgreement(id:string){const {data,error}=await supabase.from('agreements').select('*,agreement_versions(*),agreement_events(*),change_requests(*),agreement_signatures(*)').eq('id',id).single();if(error)throw error;return data as AgreementDetail}
+export async function getSharedAgreement(token:string,email:string){const {data,error}=await supabase.rpc('get_shared_agreement',{p_share_token:token,p_recipient_email:email.trim().toLowerCase()});if(error)throw error;return data as null|Record<string,string|number|boolean|null>}
+export async function requestChanges(token:string,message:string){const {error}=await supabase.rpc('request_agreement_changes',{p_share_token:token,p_message:message});if(error)throw error}
+export async function acceptAgreement(token:string){const {error}=await supabase.rpc('accept_agreement',{p_share_token:token});if(error)throw error}
+export async function createRevision(id:string,version:number,d:DealDraft){const {error}=await supabase.rpc('create_agreement_revision',{p_agreement_id:id,p_expected_version:version,p_title:d.title.trim(),p_description:d.description.trim(),p_amount_minor:Math.round(Number(d.amount)*100),p_currency:'MYR',p_start_date:d.startDate,p_completion_date:d.completionDate,p_payment_terms:d.paymentTerms.trim(),p_additional_terms:d.additionalTerms.trim()||null});if(error)throw error}
+export async function signAgreement(id:string,token:string,role:'creator'|'recipient',name:string){const {error}=await supabase.rpc('sign_agreement',{p_agreement_id:id,p_share_token:token,p_signer_name:name.trim(),p_signer_role:role});if(error)throw error}

@@ -9,6 +9,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { CreatedDealPage } from './pages/CreatedDealPage'
 import { RecipientDealPage } from './pages/RecipientDealPage'
 import { supabase } from './lib/supabase'
+import { AgreementDetailPage } from './pages/AgreementDetailPage'
 import type { Session } from '@supabase/supabase-js'
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/account" element={session ? <Navigate to="/dashboard" replace/> : <AuthPage />} />
       <Route path="/dashboard" element={protectedPage(<DashboardPage/>, '/dashboard')} />
+      <Route path="/agreements/:id" element={protectedPage(<AgreementDetailPage/>, '/dashboard')} />
       <Route path="/create" element={protectedPage(<CreateDealPage draft={draft} onChange={(value) => { setDraft(value); setReviewed(false) }} onPreview={() => setReviewed(true)} />, '/create')} />
       <Route path="/preview" element={protectedPage(reviewed ? <PreviewDealPage draft={draft} onCreated={()=>setDraft(initialDraft)} /> : <Navigate to="/create" replace />, '/preview')} />
       <Route path="/created" element={protectedPage(<CreatedDealPage/>, '/created')} />
